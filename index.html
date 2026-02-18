@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración de Clientes | Tertulia</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f4f7fb;
+}
+header{
+  background:#0b5ed7;
+  color:white;
+  padding:14px;
+  font-size:18px;
+  font-weight:bold;
+}
+.container{
+  max-width:600px;
+  margin:auto;
+  padding:16px;
+}
+.card{
+  background:white;
+  border-radius:8px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.card h3{
+  margin-top:0;
+}
+input, select{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+button{
+  width:100%;
+  padding:12px;
+  background:#0b5ed7;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+button:hover{background:#094ab2}
+.msg{
+  margin-top:10px;
+  font-weight:bold;
+}
+.ok{color:#2e7d32}
+.err{color:#c62828}
+.danger{
+  background:#c62828;
+}
+.danger:hover{
+  background:#a31f1f;
+}
+</style>
+</head>
+
+<body>
+<div id="loginAdmin" style="
+  position:fixed;
+  inset:0;
+  background:#f4f7fb;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+">
+  <div style="
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+    width:300px;
+  ">
+    <h3>🔐 Acceso administrador</h3>
+    <input type="password" id="passAdmin" placeholder="Contraseña">
+    <button onclick="verificarAdmin()">Entrar</button>
+    <div id="errorAdmin" style="color:red;margin-top:10px;"></div>
+  </div>
+</div>
+
+
+<header>👥 Administración de Clientes – Tertulia Librería</header>
+
+<div class="container">
+
+  <!-- REGISTRAR CLIENTE -->
+  <div class="card">
+    <h3>➕ Registrar cliente</h3>
+
+    <input id="nombre" placeholder="Nombre del cliente">
+    <input id="negocio" placeholder="Nombre del negocio">
+    <input id="telefono" placeholder="Teléfono">
+    <input id="email" placeholder="Email">
+    <input id="direccion" placeholder="Dirección">
+    <input id="usuario" placeholder="Usuario">
+    <input id="password" placeholder="Contraseña">
+
+    <select id="nivel">
+      <option value="10">Nivel 10% (nuevo)</option>
+      <option value="16">Nivel 16%</option>
+      <option value="22">Nivel 22%</option>
+      <option value="39">Nivel 39%</option>
+    </select>
+
+    <button onclick="guardarCliente()">Guardar cliente</button>
+    <div id="msgGuardar" class="msg"></div>
+  </div>
+
+  <!-- ELIMINAR CLIENTE -->
+  <div class="card">
+    <h3>🗑 Eliminar cliente</h3>
+
+    <input id="usuarioEliminar" placeholder="Usuario a eliminar">
+    <button class="danger" onclick="eliminarCliente()">Eliminar cliente</button>
+    <div id="msgEliminar" class="msg"></div>
+  </div>
+
+</div>
+
+<script>
+const API_URL = "https://tertuli-api.tertulia-libreriaoutlookcom.workers.dev";
+
+/* =========================
+   LOGIN MAYORISTAS
+========================= */
+function login(){
+  const form = new URLSearchParams();
+  form.append("accion","login");
+  form.append("usuario",document.getElementById("loginUser").value);
+  form.append("password",document.getElementById("loginPass").value);
+
+  fetch(API_URL,{
+    method:"POST",
+    body: form
+  })
+  .then(r => r.json())
+  .then(res=>{
+    if(res.ok){
+      localStorage.setItem("sesionMayorista","SI");
+      localStorage.setItem("nivelMayorista", res.cliente.nivel);
+      document.getElementById("loginModal").style.display = "none";
+    }else{
+      document.getElementById("loginMsg").textContent = "❌ " + res.error;
+    }
+  })
+  .catch(()=>{
+    document.getElementById("loginMsg").textContent = "❌ Error de conexión";
+  });
+}
+
+/* =========================
+   GUARDAR CLIENTE
+========================= */
+function guardarCliente(){
+  const form = new URLSearchParams();
+  form.append("accion","guardar");
+  form.append("nombre",nombre.value);
+  form.append("negocio",negocio.value);
+  form.append("telefono",telefono.value);
+  form.append("email",email.value);
+  form.append("direccion",direccion.value);
+  form.append("usuario",usuario.value);
+  form.append("password",password.value);
+  form.append("nivel",nivel.value);
+
+  fetch(API_URL,{
+    method:"POST",
+    body: form
+  })
+  .then(r => r.json())
+  .then(res=>{
+    msgGuardar.textContent = res.ok
+      ? "✅ Cliente guardado correctamente"
+      : "❌ " + res.error;
+    msgGuardar.className = "msg " + (res.ok ? "ok" : "err");
+  })
+  .catch(()=>{
+    msgGuardar.textContent = "❌ Error de conexión";
+    msgGuardar.className = "msg err";
+  });
+}
+
+/* =========================
+   ELIMINAR CLIENTE
+========================= */
+function eliminarCliente(){
+  const form = new URLSearchParams();
+  form.append("accion","eliminar");
+  form.append("usuario",usuarioEliminar.value);
+
+  fetch(API_URL,{
+    method:"POST",
+    body: form
+  })
+  .then(r => r.json())
+  .then(res=>{
+    msgEliminar.textContent = res.ok
+      ? "🗑 Cliente eliminado correctamente"
+      : "❌ " + res.error;
+    msgEliminar.className = "msg " + (res.ok ? "ok" : "err");
+  })
+  .catch(()=>{
+    msgEliminar.textContent = "❌ Error de conexión";
+    msgEliminar.className = "msg err";
+  });
+}
+
+/* =========================
+   SESIÓN PERSISTENTE
+========================= */
+if(localStorage.getItem("sesionMayorista")==="SI"){
+  const modal = document.getElementById("loginModal");
+  if(modal) modal.style.display="none";
+}
+const PASSWORD_ADMIN = "Soyeljefe"; // 🔁 Cambia esto
+
+function verificarAdmin(){
+  const pass = document.getElementById("passAdmin").value;
+
+  if(pass === PASSWORD_ADMIN){
+    localStorage.setItem("adminTertulia","SI");
+    document.getElementById("loginAdmin").style.display = "none";
+  } else {
+    document.getElementById("errorAdmin").textContent = "❌ Contraseña incorrecta";
+  }
+}
+
+// Si ya inició sesión antes
+if(localStorage.getItem("adminTertulia")==="SI"){
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const loginBox = document.getElementById("loginAdmin");
+    if(loginBox) loginBox.style.display="none";
+  });
+}
+
+</script>
+
+
+
+
+
